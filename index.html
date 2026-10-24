@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14532d">
+<title>POD Upload</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f2f4f1; --card:#ffffff; --ink:#1b2420; --muted:#66726b; --line:#d9dfda;
+    --brand:#14532d; --brand-ink:#ffffff; --soft:#e6f0e9; --warn:#b42318; --warn-bg:#fdecea;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 "IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+       padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+  header{background:var(--brand);color:var(--brand-ink);padding:18px 16px}
+  header h1{margin:0;font-size:20px;font-weight:600;letter-spacing:.2px}
+  header p{margin:2px 0 0;font-size:14px;opacity:.85}
+  main{max-width:560px;margin:0 auto;padding:16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
+  label{display:block;font-weight:500;font-size:14px;margin:0 0 6px}
+  .opt{color:var(--muted);font-weight:400}
+  .field{margin-bottom:14px}
+  .field:last-child{margin-bottom:0}
+  input[type=text],input[type=date],select,textarea{
+    width:100%;padding:12px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);font:inherit}
+  textarea{resize:vertical;min-height:64px}
+  input:focus,select:focus,textarea:focus,button:focus-visible,.drop:focus-within{outline:3px solid #86c79b;outline-offset:1px;border-color:var(--brand)}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:420px){.row{grid-template-columns:1fr}}
+  .drop{display:block;border:2px dashed #9db3a4;border-radius:12px;background:var(--soft);padding:22px 16px;text-align:center;cursor:pointer;margin:0}
+  .drop strong{display:block;font-size:16px}
+  .drop span{color:var(--muted);font-size:14px}
+  .drop.over{background:#d3e7d9;border-color:var(--brand)}
+  .drop.err{border-color:var(--warn);background:var(--warn-bg);animation:nudge .25s 2}
+  @keyframes nudge{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+  @media(prefers-reduced-motion:reduce){.drop.err{animation:none}}
+  .drop input{position:absolute;opacity:0;width:1px;height:1px}
+  ul.files{list-style:none;margin:12px 0 0;padding:0}
+  ul.files li{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;margin-bottom:8px;background:#fff}
+  .pdf{flex:none;font-size:11px;font-weight:600;background:var(--warn);color:#fff;border-radius:4px;padding:3px 5px}
+  .fname{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px}
+  .fsize{color:var(--muted);font-size:12px;flex:none}
+  .x{flex:none;border:0;background:none;font-size:22px;line-height:1;color:var(--muted);cursor:pointer;padding:4px 8px;border-radius:6px}
+  .x:hover{color:var(--warn)}
+  .done{background:var(--soft)}
+  .msg{border-radius:8px;padding:10px 12px;font-size:14px;margin-top:12px;display:none}
+  .msg.show{display:block}
+  .msg.bad{background:var(--warn-bg);color:var(--warn)}
+  .msg.info{background:#fff7e0;color:#7a5200}
+  button.primary{width:100%;padding:15px;border:0;border-radius:10px;background:var(--brand);color:#fff;font:inherit;font-weight:600;font-size:17px;cursor:pointer}
+  button.primary[disabled]{opacity:.7;cursor:wait}
+  button.primary.idle{background:#8da596}
+  button.ghost{padding:12px 14px;border:1px solid var(--brand);background:#fff;color:var(--brand);border-radius:10px;font:inherit;font-weight:500;cursor:pointer;flex:1}
+  .bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin-top:12px;display:none}
+  .bar i{display:block;height:100%;width:0;background:var(--brand);transition:width .2s}
+  .success{text-align:center;padding:26px 16px}
+  .success .tick{width:52px;height:52px;border-radius:50%;background:var(--brand);color:#fff;font-size:30px;line-height:52px;margin:0 auto 10px}
+  .success h2{margin:0 0 4px;font-size:19px}
+  .success p{margin:0 0 16px;color:var(--muted)}
+  .actions{display:flex;gap:10px}
+  header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+  .brand{flex:none;font-size:11px;font-weight:600;letter-spacing:.6px;opacity:.8;border:1px solid rgba(255,255,255,.45);border-radius:4px;padding:2px 6px;white-space:nowrap}
+  .tabs{display:flex;background:#fff;border-bottom:1px solid var(--line)}
+  .tabs button{flex:1;padding:13px 8px;border:0;background:none;font:inherit;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent}
+  .tabs button.on{color:var(--brand);border-bottom-color:var(--brand)}
+  .hbar{display:flex;gap:8px;margin-bottom:12px}
+  .hbar input{flex:1}
+  .hbar button{flex:none;padding:0 14px;border:1px solid var(--brand);background:#fff;color:var(--brand);border-radius:8px;font:inherit;font-weight:500;cursor:pointer}
+  .h-item{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:10px}
+  .h-top{display:flex;justify-content:space-between;gap:8px;font-weight:600}
+  .h-top span:last-child{font-weight:400;color:var(--muted);font-size:13px;flex:none}
+  .h-meta{color:var(--muted);font-size:13px;margin-top:2px}
+  .h-file{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:8px;font-size:14px}
+  .h-file a{flex:none;color:var(--brand);font-weight:600;text-decoration:none;border:1px solid var(--brand);border-radius:6px;padding:4px 10px}
+  .h-file .fname{flex:1}
+  .empty{text-align:center;color:var(--muted);padding:28px 8px}
+  .photo{display:block;margin:10px 0 0;text-align:center;padding:12px;border:1px solid var(--brand);border-radius:10px;color:var(--brand);font-weight:500;cursor:pointer;background:#fff}
+  .qnote{background:#fff7e0;color:#7a5200;text-align:center;font-size:14px;padding:8px;cursor:pointer}
+  .st{font-size:11px;font-weight:600;border-radius:4px;padding:2px 6px;margin-left:6px}
+  .st.Pending{background:#fff1c2;color:#7a5200}.st.Verified{background:#d3f0dc;color:#14532d}.st.Rejected{background:var(--warn-bg);color:var(--warn)}
+  .code{margin-top:14px}
+  .hidden{display:none!important}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>POD upload</h1>
+    <p>Attach the signed POD PDFs and send them to the sheet.</p>
+  </div>
+  <div class="brand">PMJ TOOLS</div>
+</header>
+<nav class="tabs">
+  <button type="button" id="tabUp" class="on">Upload</button>
+  <button type="button" id="tabHist">History</button>
+</nav>
+
+<div id="qnote" class="qnote hidden"></div>
+<main>
+  <div id="viewHist" class="hidden">
+    <div class="hbar">
+      <input type="text" id="q" placeholder="Search customer, vehicle, invoice, file" autocomplete="off">
+      <button type="button" id="refresh">Refresh</button>
+    </div>
+    <div id="hlist"></div>
+  </div>
+  <div id="viewUpload">
+  <div id="setupWarn" class="msg info" style="margin:0 0 14px">Setup needed: paste your Google Apps Script web app link into <b>API_URL</b> at the top of this file’s script.</div>
+
+  <form id="form" class="card" novalidate>
+    <div class="field">
+      <label for="customer">Customer <span class="opt">(optional)</span></label>
+      <select id="customer"><option value="">Loading customers…</option></select>
+      <input type="text" id="customerOther" class="hidden" placeholder="Type customer name" style="margin-top:8px" autocomplete="off">
+    </div>
+
+    <div class="row field">
+      <div>
+        <label for="veh">Vehicle no. <span class="opt">(optional)</span></label>
+        <input type="text" id="veh" placeholder="TN 00 AB 0000" autocapitalize="characters" autocomplete="off">
+      </div>
+      <div>
+        <label for="inv">Invoice no. <span class="opt">(optional)</span></label>
+        <input type="text" id="inv" autocomplete="off">
+      </div>
+    </div>
+
+    <div class="row field">
+      <div>
+        <label for="date">Delivery date</label>
+        <input type="date" id="date">
+      </div>
+      <div>
+        <label for="by">Your name <span class="opt">(optional)</span></label>
+        <input type="text" id="by" autocomplete="name">
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="rem">Remarks <span class="opt">(optional)</span></label>
+      <textarea id="rem"></textarea>
+    </div>
+
+    <div class="field">
+      <label for="pdfs">POD PDFs <span style="color:var(--warn)">*required</span></label>
+      <label class="drop" id="drop" for="pdfs">
+        <strong>Tap to choose PDFs</strong>
+        <span>or drop them here. You can select several at once.</span>
+        <input type="file" id="pdfs" accept="application/pdf,.pdf" multiple>
+      </label>
+      <label class="photo" for="cam">Take photos instead (makes one PDF)<input type="file" id="cam" accept="image/*" capture="environment" hidden></label>
+      <ul class="files" id="list"></ul>
+    </div>
+
+    <div class="field code"><label for="code">Access code <span class="opt">(ask your supervisor)</span></label>
+      <input type="text" id="code" autocomplete="off"></div>
+    <div id="err" class="msg bad" role="alert"></div>
+    <div class="bar" id="bar"><i id="barFill"></i></div>
+    <div style="margin-top:16px"><button type="submit" class="primary idle" id="go">Upload PODs</button></div>
+  </form>
+
+  <section id="ok" class="card success hidden" aria-live="polite">
+    <div class="tick">✓</div>
+    <h2 id="okTitle">Uploaded</h2>
+    <p id="okSub"></p>
+    <div class="actions">
+      <button class="ghost" id="again">Same customer</button>
+      <button class="ghost" id="fresh">New upload</button>
+    </div>
+  </section>
+  </div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+// ====== SETUP: paste your Apps Script web app URL (ends with /exec) ======
+const API_URL = "https://script.google.com/macros/s/AKfycbyPif7o5EELyfceQ5Rn7KHLE9sRJZ_yHHowzubJhqw8rF5nt_sQk2ndj0qo4Cb1JW6QTQ/exec";
+// =========================================================================
+const MAX_MB = 10;
+const $ = id => document.getElementById(id);
+let files = [];          // File objects waiting to upload
+let busy = false;
+
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+};
+
+const today = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0,10); };
+const configured = () => API_URL && !API_URL.startsWith("PASTE");
+if (configured()) $("setupWarn").classList.add("hidden");
+
+$("date").value = today();
+$("by").value = store.get("pod_by", "");
+$("code").value = store.get("pod_code", "");
+$("code").addEventListener("change", e => { store.set("pod_code", e.target.value.trim()); loadCustomers(); flushQueue(); });
+
+// ---- Customers dropdown ----
+function fillCustomers(list){
+  const sel = $("customer");
+  const last = store.get("pod_last_customer", "");
+  sel.innerHTML = "";
+  sel.add(new Option("— Select customer —", ""));
+  list.forEach(n => sel.add(new Option(n, n)));
+  sel.add(new Option("Other (not in list)", "__other"));
+  if (last && list.includes(last)) sel.value = last;
+}
+async function loadCustomers(){
+  const cached = store.get("pod_customers", []);
+  if (cached.length) fillCustomers(cached);
+  if (!configured()){ if (!cached.length) fillCustomers([]); return; }
+  try{
+    const r = await fetch(API_URL + "?action=customers&code=" + encodeURIComponent(store.get("pod_code","")));
+    const j = await r.json();
+    if (j.ok){ store.set("pod_customers", j.customers); fillCustomers(j.customers); }
+  }catch(e){ if (!cached.length) fillCustomers([]); }
+}
+$("customer").addEventListener("change", e => {
+  const other = e.target.value === "__other";
+  $("customerOther").classList.toggle("hidden", !other);
+  if (other) $("customerOther").focus();
+});
+loadCustomers();
+
+// ---- Files ----
+const isPdf = f => f.type === "application/pdf" || /\.pdf$/i.test(f.name);
+const fmt = b => b > 1048576 ? (b/1048576).toFixed(1) + " MB" : Math.max(1, Math.round(b/1024)) + " KB";
+
+function showErr(t){ const e = $("err"); e.textContent = t; e.classList.add("show"); }
+function clearErr(){ $("err").classList.remove("show"); $("drop").classList.remove("err"); }
+
+function addFiles(fl){
+  clearErr();
+  const skipped = [];
+  [...fl].forEach(f => {
+    if (!isPdf(f)) { skipped.push(f.name + " is not a PDF"); return; }
+    if (f.size > MAX_MB * 1048576) { skipped.push(f.name + " is over " + MAX_MB + " MB"); return; }
+    if (files.some(x => x.name === f.name && x.size === f.size)) return;
+    files.push(f);
+  });
+  if (skipped.length) showErr("Skipped: " + skipped.join("; "));
+  render();
+}
+function render(){
+  const ul = $("list"); ul.innerHTML = "";
+  files.forEach((f, i) => {
+    const li = document.createElement("li");
+    li.innerHTML = '<span class="pdf">PDF</span><span class="fname"></span><span class="fsize"></span><button type="button" class="x" aria-label="Remove file">×</button>';
+    li.querySelector(".fname").textContent = f.name;
+    li.querySelector(".fsize").textContent = fmt(f.size);
+    li.querySelector(".x").onclick = () => { if (!busy){ if (f._photo) shots = []; files.splice(i,1); render(); } };
+    ul.appendChild(li);
+  });
+  const n = files.length;
+  $("go").textContent = n ? "Upload " + n + (n === 1 ? " POD" : " PODs") : "Upload PODs";
+  $("go").classList.toggle("idle", !n);
+}
+$("pdfs").addEventListener("change", e => { addFiles(e.target.files); e.target.value = ""; });
+const drop = $("drop");
+["dragenter","dragover"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add("over"); }));
+["dragleave","drop"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove("over"); }));
+drop.addEventListener("drop", e => addFiles(e.dataTransfer.files));
+
+// ---- Photos to one PDF ----
+let shots = [];
+const loadImg = f => new Promise((res, rej) => { const u = URL.createObjectURL(f), im = new Image(); im.onload = () => { URL.revokeObjectURL(u); res(im); }; im.onerror = rej; im.src = u; });
+$("cam").addEventListener("change", async e => {
+  const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+  clearErr();
+  try{
+    const im = await loadImg(f), k = Math.min(1, 1600 / Math.max(im.width, im.height));
+    const c = document.createElement("canvas"); c.width = im.width * k; c.height = im.height * k;
+    c.getContext("2d").drawImage(im, 0, 0, c.width, c.height);
+    shots.push({d: c.toDataURL("image/jpeg", 0.7), w: c.width, h: c.height});
+    const { jsPDF } = window.jspdf, doc = new jsPDF({unit: "pt", format: "a4"});
+    const W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight();
+    shots.forEach((s, i) => { if (i) doc.addPage(); const r = Math.min(W / s.w, H / s.h); doc.addImage(s.d, "JPEG", (W - s.w * r) / 2, (H - s.h * r) / 2, s.w * r, s.h * r); });
+    const pf = new File([doc.output("blob")], "POD photos (" + shots.length + (shots.length === 1 ? " page).pdf" : " pages).pdf"), {type: "application/pdf"});
+    pf._photo = true;
+    files = files.filter(x => !x._photo); files.push(pf); render();
+  }catch(err){ showErr("Could not use that photo. Try again."); }
+});
+
+// ---- Offline queue (IndexedDB) ----
+const idb = () => new Promise((res, rej) => { const o = indexedDB.open("pod_q", 1); o.onupgradeneeded = () => o.result.createObjectStore("q", {keyPath: "id", autoIncrement: true}); o.onsuccess = () => res(o.result); o.onerror = () => rej(o.error); });
+const qdo = async (mode, fn) => { const db = await idb(); return new Promise((res, rej) => { const t = db.transaction("q", mode), out = fn(t.objectStore("q")); t.oncomplete = () => res(out.result); t.onerror = () => rej(t.error); }); };
+const qAdd = it => qdo("readwrite", s => s.add(it)), qAll = () => qdo("readonly", s => s.getAll()), qDel = id => qdo("readwrite", s => s.delete(id));
+async function qCount(){ try{ const n = (await qAll()).length, el = $("qnote"); el.textContent = n ? n + " waiting to send. Tap to retry." : ""; el.classList.toggle("hidden", !n); }catch(e){} }
+let flushing = false;
+async function flushQueue(){
+  if (flushing || !configured()) return; flushing = true;
+  try{
+    for (const it of await qAll()){
+      const j = await post(it.info, it.name, it.blob, it.subId, true);
+      if (!j.ok) break;
+      await qDel(it.id);
+      saveLocal({ts: new Date().toISOString(), date: it.info.date, customer: it.info.customer, vehNo: it.info.vehNo, invoiceNo: it.info.invoiceNo, by: it.info.uploadedBy, fileName: it.name, link: j.link || "", status: "Pending"});
+    }
+  }catch(e){}
+  flushing = false; qCount();
+}
+$("qnote").onclick = flushQueue;
+window.addEventListener("online", flushQueue);
+
+// ---- Submit ----
+const toB64 = f => new Promise((res, rej) => {
+  const r = new FileReader();
+  r.onload = () => res(String(r.result).split(",")[1]);
+  r.onerror = () => rej(new Error("Could not read " + f.name));
+  r.readAsDataURL(f);
+});
+
+const post = async (info, name, blob, subId, force) => {
+  const data = await toB64(blob);
+  const r = await fetch(API_URL, {method: "POST", headers: {"Content-Type": "text/plain;charset=utf-8"},
+    body: JSON.stringify({action: "upload", code: store.get("pod_code", ""), submissionId: subId, fileName: name, data, force, ...info})});
+  return r.json();
+};
+function showOk(done, queued, customer){
+  $("form").classList.add("hidden");
+  $("okTitle").textContent = queued ? "Saved on this phone" : done + (done === 1 ? " POD uploaded" : " PODs uploaded");
+  $("okSub").textContent = queued ? "No signal. " + queued + " will send automatically when you’re back online." : (customer ? "Saved for " + customer + "." : "Saved without a customer name.");
+  $("again").textContent = customer ? "Add more for " + customer : "Add more";
+  $("ok").classList.remove("hidden");
+}
+$("form").addEventListener("submit", async e => {
+  e.preventDefault();
+  if (busy) return;
+  clearErr();
+  if (!files.length){
+    showErr("Attach at least one POD PDF to continue.");
+    $("drop").classList.add("err");
+    $("drop").scrollIntoView({behavior: "smooth", block: "center"});
+    return;
+  }
+  if (!configured()){ showErr("The app isn’t connected to a Google Sheet yet. Add the API_URL in the script."); return; }
+  const sel = $("customer").value;
+  const customer = sel === "__other" ? $("customerOther").value.trim() : sel;
+  const info = {customer, date: $("date").value, vehNo: $("veh").value.trim().toUpperCase(),
+    invoiceNo: $("inv").value.trim(), uploadedBy: $("by").value.trim(), remarks: $("rem").value.trim()};
+  store.set("pod_by", info.uploadedBy); store.set("pod_code", $("code").value.trim());
+  if (sel && sel !== "__other") store.set("pod_last_customer", sel);
+  busy = true; $("go").disabled = true;
+  const total = files.length, subId = "S" + Date.now().toString(36).toUpperCase();
+  $("bar").style.display = "block";
+  let done = 0, force = false;
+  try{
+    while (files.length){
+      const f = files[0];
+      $("go").textContent = "Uploading " + (done + 1) + " of " + total + "…";
+      $("barFill").style.width = (done / total * 100) + "%";
+      let j = await post(info, f.name, f, subId, force);
+      if (!j.ok && j.duplicate){
+        if (!confirm(j.error + "\n\nAdd another POD for this invoice anyway?")) throw new Error("Cancelled");
+        force = true; j = await post(info, f.name, f, subId, true);
+      }
+      if (!j.ok) throw new Error(j.error || "Upload failed");
+      saveLocal({ts: new Date().toISOString(), date: info.date, customer: info.customer, vehNo: info.vehNo,
+        invoiceNo: info.invoiceNo, by: info.uploadedBy, fileName: f.name, link: j.link || "", status: "Pending"});
+      files.shift(); done++; render();
+    }
+    shots = []; showOk(done, 0, customer);
+  }catch(err){
+    if (err.name === "TypeError"){   // no signal: keep the rest on the phone
+      const n = files.length;
+      for (const f of files) await qAdd({info, name: f.name, blob: f, subId});
+      files = []; shots = []; render(); qCount(); showOk(done, n, customer);
+    } else {
+      showErr((done ? done + " uploaded. " : "") + "Stopped: " + err.message + ". Remaining files are still here, tap Upload to retry.");
+    }
+  }finally{
+    busy = false; $("go").disabled = false; $("bar").style.display = "none"; $("barFill").style.width = "0"; render();
+  }
+});
+
+function reset(keepCustomer){
+  files = []; render(); clearErr();
+  ["veh","inv","rem","customerOther"].forEach(id => $(id).value = "");
+  $("date").value = today();
+  if (!keepCustomer){ $("customer").value = ""; $("customerOther").classList.add("hidden"); }
+  $("ok").classList.add("hidden"); $("form").classList.remove("hidden");
+  window.scrollTo({top:0});
+}
+$("again").onclick = () => reset(true);
+$("fresh").onclick = () => reset(false);
+
+// ---- History ----
+// Kept in three places so nothing disappears: the sheet, a cache on this phone,
+// and a record of this phone's own uploads. They are merged by file link.
+const HKEY = "pod_hist_cache";
+function saveLocal(rec){
+  const c = store.get(HKEY, []);
+  c.push(rec);
+  store.set(HKEY, c.slice(-500));
+}
+function mergeHist(server){
+  const map = new Map();
+  const put = r => { const k = r.link || (r.ts + r.fileName); if (!map.has(k) || r.link) map.set(k, r); };
+  store.get(HKEY, []).forEach(put);
+  (server || []).forEach(put);
+  const all = [...map.values()].sort((a,b) => String(b.ts).localeCompare(String(a.ts))).slice(0, 500);
+  store.set(HKEY, all);
+  return all;
+}
+function fmtTs(t){
+  const d = new Date(t); if (isNaN(d)) return "";
+  return d.toLocaleString([], {day:"2-digit", month:"short", hour:"2-digit", minute:"2-digit"});
+}
+function renderHist(list){
+  const q = $("q").value.trim().toLowerCase();
+  const box = $("hlist"); box.innerHTML = "";
+  const rows = list.filter(r => !q || [r.customer,r.vehNo,r.invoiceNo,r.fileName,r.by].join(" ").toLowerCase().includes(q));
+  if (!rows.length){ box.innerHTML = '<div class="empty">No uploads to show yet.</div>'; return; }
+  rows.forEach(r => {
+    const d = document.createElement("div"); d.className = "h-item";
+    d.innerHTML = '<div class="h-top"><span class="c"></span><span class="t"></span></div><div class="h-meta"></div><div class="h-file"><span class="fname"></span></div>';
+    d.querySelector(".c").textContent = r.customer || "No customer";
+    d.querySelector(".t").textContent = fmtTs(r.ts);
+    d.querySelector(".h-meta").textContent = [r.vehNo && "Veh " + r.vehNo, r.invoiceNo && "Inv " + r.invoiceNo, r.by && "by " + r.by].filter(Boolean).join("  |  ") || " ";
+    d.querySelector(".fname").textContent = r.fileName || "";
+    if (r.status){ const b = document.createElement("span"); b.className = "st " + r.status; b.textContent = r.status; d.querySelector(".t").before(b); if (r.status === "Rejected" && r.reason) d.querySelector(".h-meta").textContent += "  |  Reason: " + r.reason; }
+    if (/^https:\/\//.test(r.link || "")){
+      const a = document.createElement("a"); a.href = r.link; a.target = "_blank"; a.rel = "noopener"; a.textContent = "Open";
+      d.querySelector(".h-file").appendChild(a);
+    }
+    box.appendChild(d);
+  });
+}
+let histList = mergeHist([]);
+async function loadHist(){
+  renderHist(histList);
+  if (!configured()) return;
+  try{
+    const r = await fetch(API_URL + "?action=history&code=" + encodeURIComponent(store.get("pod_code","")));
+    const j = await r.json();
+    if (j.ok){ histList = mergeHist(j.history); renderHist(histList); }
+  }catch(e){}
+}
+function showTab(h){
+  $("viewHist").classList.toggle("hidden", !h);
+  $("viewUpload").classList.toggle("hidden", h);
+  $("tabHist").classList.toggle("on", h);
+  $("tabUp").classList.toggle("on", !h);
+  if (h) loadHist();
+}
+$("tabUp").onclick = () => showTab(false);
+$("tabHist").onclick = () => showTab(true);
+$("refresh").onclick = loadHist;
+$("q").addEventListener("input", () => renderHist(histList));
+render(); qCount(); flushQueue();
+</script>
+</body>
+</html>
